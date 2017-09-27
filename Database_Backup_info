@@ -1,0 +1,36 @@
+--backup history 2.0
+select b.physical_device_name
+        ,a.server_name
+        ,a.database_name
+        ,a.recovery_model
+        ,a.compatibility_level
+        ,a.backup_start_date
+        ,a.backup_finish_date
+        ,a.type
+        ,(CASE  
+	  WHEN  a.backup_size/1024.0/1024.0/1024.0>1 THEN CAST(convert(decimal(18,2) ,a.backup_size/1024.0/1024.0/1024.0) as varchar)+' GB'
+	  WHEN 0.001<a.backup_size/1024.0/1024.0/1024.0  and a.backup_size/1024.0/1024.0/1024.0 <1 THEN  CAST(convert(decimal(18,2) ,a.backup_size/1024.0/1024.0) as varchar)+' MB'
+	  WHEN a.backup_size/1024.0/1024.0/1024.0< 0.001  THEN  CAST(convert(decimal(18,2) ,a.backup_size/1024.0) as varchar)+' KB'
+	  END 
+	   )AS backup_file_size
+
+	   ,(CASE  
+	  WHEN  a.compressed_backup_size/1024.0/1024.0/1024.0>1 THEN CAST(convert(decimal(18,2) ,a.compressed_backup_size/1024.0/1024.0/1024.0) as varchar)+' GB'
+	  WHEN 0.001<a.compressed_backup_size/1024.0/1024.0/1024.0  and a.compressed_backup_size/1024.0/1024.0/1024.0 <1 THEN  CAST(convert(decimal(18,2) ,a.compressed_backup_size/1024.0/1024.0) as varchar)+' MB'
+	  WHEN a.compressed_backup_size/1024.0/1024.0/1024.0< 0.001  THEN  CAST(convert(decimal(18,2) ,a.compressed_backup_size/1024.0) as varchar)+' KB'
+	  END 
+	   )AS compressed_backup_size
+       
+        ,a.user_name
+        ,c.software_name
+from msdb.dbo.backupset a
+inner join msdb.dbo.backupmediafamily b
+on a.media_set_id = b.media_set_id
+inner join msdb.dbo.backupmediaset c
+on b.media_set_id = c.media_set_id
+where a.database_name = 'EC'
+
+--change the DB name here--
+
+order by backup_start_date desc
+--order by backup_set_id desc
