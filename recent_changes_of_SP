@@ -1,0 +1,11 @@
+-----Find the change history 
+
+SELECT name AS object_name 
+  ,SCHEMA_NAME(schema_id) AS schema_name
+  ,type_desc
+  ,create_date
+  ,modify_date
+FROM sys.objects
+WHERE modify_date > GETDATE() -7 and type = 'P'
+ORDER BY modify_date;
+
