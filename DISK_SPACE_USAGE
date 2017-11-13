@@ -1,0 +1,66 @@
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+-- =============================================
+-- Description:	<used to collect disk space usage status>
+-- exec msdb.dbo.disk_space_status
+--=============================================
+CREATE PROCEDURE [dbo].[disk_space_status]
+	-- this storeproc do not hava a param
+
+AS
+BEGIN
+
+	SET NOCOUNT ON;
+
+--sp_configure 'show advanced options',1
+--reconfigure
+--go
+--sp_configure 'xp_cmdshell',1
+--reconfigure
+--GO
+
+
+if object_id('tempdb..#a') is not null 
+Begin
+    drop table #a
+End
+create table #a (id int IDENTITY(1,1),DiskName varchar(50))
+insert into #a(DiskName)
+  exec xp_cmdshell  'wmic LOGICALDISK get name'
+
+
+ if object_id('tempdb..#b') is not null 
+ Begin
+    drop table #b
+End
+create table #b (id int IDENTITY(1,1),freespace varchar(50))
+insert into #b(freespace)
+  exec xp_cmdshell  'wmic LOGICALDISK get freespace'
+
+
+if object_id('tempdb..#c') is not null 
+Begin
+    drop table #c
+End
+create table #c (id int IDENTITY(1,1),size varchar(50))
+insert into #c(size)
+  exec xp_cmdshell  'wmic LOGICALDISK get size'
+ 
+
+
+select server_name=@@servername,DiskName,convert(bigint,replace(size,char(13),''))/1024/1024/1024 as total_disk_size_gb,convert(bigint,replace(#b.freespace,char(13),''))/1024/1024/1024 as free_disk_size_gb,convert(varchar,convert(decimal(4, 2),(convert(decimal(15, 2),convert(decimal(15, 2),replace(#b.freespace,char(13),''))/1024/1024/1024*100)/convert(decimal(15, 2),convert(decimal(15, 2),replace(size,char(13),''))/1024/1024/1024))))+'%' as free_space_percent
+from #a join #b on #a.id=#b.id join #c on #a.id=#c.id
+where #a.id >1 and #b.freespace is not null and charindex(char(13),replace(#b.freespace,' ','')) <>1
+
+
+
+	SET NOCOUNT OFF
+END
+
+GO
+
+
